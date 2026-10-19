@@ -1,0 +1,64 @@
+name: CI - Monolito y Microservicios
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  monolito:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar codigo
+        uses: actions/checkout@v4
+
+      - name: Construir e iniciar Monolito
+        run: docker compose up -d --build
+        working-directory: monolito
+
+      - name: Ejecutar pruebas
+        run: docker compose exec -T app npm test
+        working-directory: monolito
+
+      - name: Mostrar registros si falla
+        if: failure()
+        run: docker compose logs
+        working-directory: monolito
+
+      - name: Detener contenedores
+        if: always()
+        run: docker compose down -v
+        working-directory: monolito
+
+  microservicios:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar codigo
+        uses: actions/checkout@v4
+
+      - name: Construir e iniciar Microservicios
+        run: docker compose up -d --build
+        working-directory: microservicios
+
+      - name: Ejecutar pruebas de usuarios
+        run: docker compose exec -T usuarios npm test
+        working-directory: microservicios
+
+      - name: Ejecutar pruebas de productos
+        run: docker compose exec -T productos npm test
+        working-directory: microservicios
+
+      - name: Ejecutar pruebas de pedidos
+        run: docker compose exec -T pedidos npm test
+        working-directory: microservicios
+
+      - name: Mostrar registros si falla
+        if: failure()
+        run: docker compose logs
+        working-directory: microservicios
+
+      - name: Detener contenedores
+        if: always()
+        run: docker compose down -v
+        working-directory: microservicios
