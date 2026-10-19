@@ -6,7 +6,7 @@ const app = express();
 app.use(express.json());
 
 app.get('/health', (req, res) => {
-    res.json({ estado: 'ok', servicio: 'usuarios' });
+  res.json({ status: 'ok', service: 'usuarios' });
 });
 
 app.get('/usuarios', async (req, res) => {
@@ -19,6 +19,75 @@ app.get('/usuarios', async (req, res) => {
             error: 'Error al consultar usuarios'
         });
     }
+});
+
+// POST: Crear usuario
+app.post('/usuarios', async (req, res) => {
+  const { nombre, email } = req.body;
+  if (!nombre || !email) {
+    return res.status(400).json({ error: 'Nombre y email son obligatorios' });
+  }
+  try {
+    const result = await pool.query(
+      'INSERT INTO usuarios (nombre, email) VALUES ($1, $2) RETURNING *',
+      [nombre, email]
+    );
+    res.status(201).json(result.rows[0]);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Error al crear usuario' });
+  }
+});
+
+// PUT: Actualizar usuario
+app.put('/usuarios/:id', async (req, res) => {
+  const { nombre, email } = req.body;
+  if (!nombre || !email) {
+    return res.status(400).json({ error: 'Nombre y email son obligatorios' });
+  }
+  try {
+    const result = await pool.query(
+      'UPDATE usuarios SET nombre = $1, email = $2 WHERE id = $3 RETURNING *',
+      [nombre, email, req.params.id]
+    );
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: 'Usuario no encontrado' });
+    }
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Error al actualizar usuario' });
+  }
+});
+
+// DELETE: Eliminar usuario
+app.delete('/usuarios/:id', async (req, res) => {
+  try {
+    const result = await pool.query(
+      'DELETE FROM usuarios WHERE id = $1 RETURNING *',
+      [req.params.id]
+    );
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: 'Usuario no encontrado' });
+    }
+    res.json({ mensaje: 'Usuario eliminado', usuario: result.rows[0] });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Error al eliminar usuario' });
+  }
+});
+
+app.get('/usuarios/:id', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM usuarios WHERE id = $1', [req.params.id]);
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: 'Usuario no encontrado' });
+    }
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Error al consultar usuario' });
+  }
 });
 
 module.exports = app;

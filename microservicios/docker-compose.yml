@@ -69,6 +69,9 @@ services:
     ports:
       - "3003:3003"
     environment:
+      DATABASE_URL: postgres://postgres:postgres@pedidos-db:5432/pedidos_db
+      USUARIOS_URL: http://usuarios:3001
+      PRODUCTOS_URL: http://productos:3002
       PORT: 3003
       DB_HOST: pedidos-db
       DB_PORT: 5432
